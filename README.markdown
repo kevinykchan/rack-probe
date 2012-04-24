@@ -15,14 +15,14 @@ gem dependencies
 ------------
 
 * rack
-* ruby-dtrace
+* ruby-usdt
 
 installing
 ----------
 
 `gem sources -a http://gems.github.com`
 
-`gem install ecin-rack-probe`
+`gem install kevinykchan-rack-probe`
 
 setup
 -----
@@ -31,7 +31,7 @@ Rails Middleware:
 
 _Inside your config/environment.rb_
 
-`config.gem "ecin-rack-probe", :lib => "rack/probe"`
+`config.gem "kevinykchan-rack-probe", :lib => "rack/probe"`
 
 `config.middleware.use "Rack::Probe"`
 

@@ -13,41 +13,36 @@ module Rack
     require 'dtrace/provider'
         
     def initialize( app, opts = {} )
-      # Unless our probes are already defined...
-      unless Dtrace::Probe::Rack.instance_of? Dtrace::Provider::Klass
-        Dtrace::Provider.create :rack do |p|
-          p.probe :get                # GET request
-          p.probe :post               # POST request
-          p.probe :put                # PUT request
-          p.probe :delete             # DELETE request
-          p.probe :ip,  :string       # IP of the requester
-          p.probe :path,  :string     # Path visited 
-          p.probe :referer, :string   # Referer
-          p.probe :xhr                # AJAX request
-          
-          p.probe :request_start      # Start of a request
-          p.probe :request_finish     # End of a request
-        end
-      end
-    
-      # Provider shortcut
-      @R = Dtrace::Probe::Rack
+      @R = Dtrace::Provider.create :ruby, :rack
+      @P = Object.new
+      @P.get    = p.probe "request", "get"      # GET request
+      @P.post   = p.probe "request", "post"     # POST request
+      @P.put    = p.probe "request", "put"      # PUT request
+      @P.delete = p.probe "request", "delete"   # DELETE request
+      @P.ip     = p.probe "request", "ip",  :string     # IP of the requester
+      @P.path   = p.probe "request", "path",  :string   # Path visited 
+      @P.referrer = p.probe "request", "referer", :string # Referer
+      @P.xhr    = p.probe "request", "xhr"                # AJAX request
+
+      @P.request_start = p.probe "request", "request_start"   # Start of a request
+      @P.request_finish = p.probe "request", "request_finish" # End of a request
+
       @app = app
     end
 
     def call( env )
-      @R.request_start(&:fire)
+      @R.request_start.fire
       request = Rack::Request.new env
-      @R.get(&:fire) if request.get?
-      @R.post(&:fire) if request.post?
-      @R.put(&:fire)  if request.put?
-      @R.delete(&:fire) if request.delete?
-      @R.xhr(&:fire) if request.xhr?
-      @R.path    { |p| p.fire(request.path) }
-      @R.ip      { |p| p.fire(request.ip) }
-      @R.referer { |p| p.fire(request.referer) }
+      @R.get.fire  if request.get?
+      @R.post.fire if request.post?
+      @R.put.fire  if request.put?
+      @R.delete.fire  if request.delete?
+      @R.xhr.fire     if request.xhr?
+      @R.path.fire(request.path)
+      @R.ip.fire(request.ip)
+      @R.referer.fire(request.referer)
       response = @app.call(env)
-      @R.request_finish(&:fire)
+      @R.request_finish.fire
       response
     end
 
